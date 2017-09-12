@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ################################################################################
 #                                                                              #
@@ -66,7 +66,7 @@ print_help()
         print_version
         printf "$AUTHOR\n"
         printf "Monitor GPU state with the use of nvidia-smi\n"
-/bin/cat <<EOT
+cat <<EOT
 
 Options:
 -h
@@ -185,7 +185,7 @@ sensor="GPU #$gpu"
 # Special variable for storing line number to cut
 SEDN=$(($gpu+1))
 #Get the temperature
-TEMP=`${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v' | cut -d, -f4 | cut -c2-3`
+TEMP=$(${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v' | cut -d, -f4 | cut -c2-3)
 
 
 # Check if the thresholds have been set correctly
@@ -204,20 +204,20 @@ fi
 
 # Verbose output
 if [[ "$verbosity" -ge 1 ]]; then
-   /bin/cat <<__EOT
+   cat <<__EOT
 Debugging information:
   Warning threshold: $thresh_warn
   Critical threshold: $thresh_crit
   Verbosity level: $verbosity
   Current $sensor temperature: $TEMP
 __EOT
-printf "\n  Temperature lines directly from sensors:\n"
-${SENSORPROG}
-printf "\n\n"
+   printf "\n  Temperature lines directly from sensors:\n"
+   ${SENSORPROG}
+   printf "\n\n"
 fi
 
 # Get performance data for Nagios "Performance Data" field
-PERFDATA=`${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v'`
+PERFDATA=$(${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v')
 
 
 # And finally check the temperature against our thresholds
