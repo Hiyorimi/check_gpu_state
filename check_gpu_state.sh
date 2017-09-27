@@ -36,7 +36,7 @@
 
 
 
-VERSION="Version 0.1"
+VERSION="Version 0.2"
 AUTHOR="(c) 2017 Hiyourimi"
 
 
@@ -93,7 +93,7 @@ thresh_warn=
 # Critical threshold
 thresh_crit=
 # Hardware to monitor
-gpu=1
+gpu=0
 
 # See if we have sensors program installed and can execute it
 if [[ ! -x "$SENSORPROG" ]]; then
@@ -183,10 +183,14 @@ done
 
 sensor="GPU #$gpu"
 # Special variable for storing line number to cut
-SEDN=$(($gpu+1))
+SEDN=$(($gpu+2))
+# Get performance data for Nagios "Performance Data" field
+PERFDATA=`${SENSORPROG} --format=csv --query-gpu=name,temperature.gpu,clocks.video,clocks.mem,gpu_bus_id | awk -vv="${SEDN}" 'NR==v'`
 #Get the temperature
-TEMP=$(${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v' | cut -d, -f4 | cut -c2-3)
-
+TEMP=`echo $PERFDATA | cut -d, -f2 | cut -c2-3`
+CLOCKV=`echo $PERFDATA | cut -d, -f3`
+CLOCKM=`echo $PERFDATA | cut -d, -f4`
+BUSID=`echo $PERFDATA | cut -d, -f5`
 
 # Check if the thresholds have been set correctly
 if [[ -z "$thresh_warn" || -z "$thresh_crit" ]]; then
@@ -216,9 +220,6 @@ __EOT
    printf "\n\n"
 fi
 
-# Get performance data for Nagios "Performance Data" field
-PERFDATA=$(${SENSORPROG} --format=csv --query-gpu=name,power.draw,fan.speed,temperature.gpu,clocks.video,clocks.mem | awk -vv="${SEDN}" 'NR==v')
-
 
 # And finally check the temperature against our thresholds
 if [[ "$TEMP" != +([0-9]) ]]; then
@@ -238,7 +239,8 @@ if [[ "$TEMP" != +([0-9]) ]]; then
 
   else
         # Temperature is ok
-        echo "$sensor OK - Temperature is $TEMP | $PERFDATA"
+        echo "$sensor OK - Temp is $TEMP - CV:$CLOCKV - CM:$CLOCKM - BUS:$BUSID | $PERFDATA"
         exit $STATE_OK
+
 fi
 exit 3
